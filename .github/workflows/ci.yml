@@ -1,0 +1,61 @@
+name: ci
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    name: linux build + tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: deps
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake libcurl4-openssl-dev libssl-dev
+      - name: configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DMIKTO_WERROR=ON
+      - name: build
+        run: cmake --build build -j"$(nproc)"
+      - name: tests
+        run: ./build/mikto_tests
+      - name: smoke
+        run: ./build/mikto --version && ./build/mikto modules | head -5
+
+  windows:
+    name: windows build (msvc + vcpkg)
+    runs-on: windows-latest
+    env:
+      VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: microsoft/setup-vcpkg@v1
+        with:
+          vcpkg-url: https://github.com/microsoft/vcpkg.git
+          ref: 2025.01.13
+      - name: restore vcpkg cache
+        uses: actions/cache@v4
+        with:
+          path: vcpkg_installed
+          key: vcpkg-windows-curl-openssl
+      - name: configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DMIKTO_BUILD_TESTS=OFF "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+      - name: build
+        run: cmake --build build --config Release
+      - name: smoke
+        run: .\\build\\Release\\mikto.exe --version
+
+  macos:
+    name: macos build
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: deps
+        run: brew install cmake curl openssl@3
+      - name: configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DMIKTO_BUILD_TESTS=OFF -DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl@3
+      - name: build
+        run: cmake --build build -j3
+      - name: smoke
+        run: ./build/mikto --version

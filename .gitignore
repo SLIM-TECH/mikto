@@ -1,0 +1,5 @@
+build/
+vcpkg_installed/
+reports/
+*.json.cache
+.DS_Store

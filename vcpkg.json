@@ -1,0 +1,13 @@
+{
+  "name": "mikto",
+  "version": "0.1.0",
+  "description": "authorized-only reconnaissance & audit scanner",
+  "license": "MIT",
+  "dependencies": [
+    {
+      "name": "curl",
+      "features": ["ssl"]
+    },
+    "openssl"
+  ]
+}

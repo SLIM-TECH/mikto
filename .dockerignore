@@ -1,0 +1,7 @@
+build/
+.git/
+.github/
+*.md
+docs/
+examples/
+vcpkg_installed/

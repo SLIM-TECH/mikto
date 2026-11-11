@@ -1,0 +1,22 @@
+# mikto в докере: скан + отчёт в смонтированную папку
+# пример: docker compose run --rm scan scan https://target.example --html /reports/report.html
+services:
+  scan:
+    build: .
+    image: mikto:local
+    volumes:
+      - ./reports:/reports
+    # цели и опции передаются после "scan": docker compose run --rm scan scan <target> [opts]
+    command: ["--help"]
+
+  # пример мониторинга по расписанию; включается профилем: docker compose --profile watch up
+  watch:
+    image: mikto:local
+    build: .
+    profiles: ["watch"]
+    volumes:
+      - ./reports:/reports
+      - ./targets.txt:/targets.txt:ro
+    entrypoint: ["/bin/sh", "-c"]
+    # раз в сутки: скан всех целей из файла + diff со вчерашним JSON
+    command: 'while true; do mikto scan /targets.txt --json /reports/now.json; [ -f /reports/prev.json ] && mikto diff /reports/prev.json /reports/now.json; mv /reports/now.json /reports/prev.json; sleep 86400; done'
